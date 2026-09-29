@@ -7,10 +7,14 @@ use App\Models\Pig;
 use App\Models\PigMovement;
 use App\Services\MovementService;
 use App\Support\BranchScope;
+use App\Support\RedirectsToFormModal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class MovementController extends Controller
 {
+    use RedirectsToFormModal;
+
     public function __construct(private readonly MovementService $service) {}
 
     public function index(Request $request)
@@ -23,23 +27,40 @@ class MovementController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('movements.index', compact('movements'));
+        return view('movements.index', [
+            'movements' => $movements,
+            'pigs' => $this->movablePigs($scope),
+            'pens' => Pen::when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))->orderBy('name')->get(),
+        ]);
     }
 
     public function create()
     {
         $scope = BranchScope::ids(auth()->user());
-        $pigs = Pig::whereNotIn('status', ['mati', 'dijual'])
-            ->when($scope !== null, fn ($q) => $q->whereHas('pen', fn ($p) => $p->whereIn('branch_id', $scope)))
-            ->orderBy('code')->get();
-        $pens = Pen::when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))->orderBy('name')->get();
 
-        return view('movements.create', compact('pigs', 'pens'));
+        return view('movements.create', [
+            'pigs' => $this->movablePigs($scope),
+            'pens' => Pen::when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * Ternak yang masih boleh dipindahkan.
+     *
+     * @param  array<int>|null  $scope
+     * @return Collection<int, Pig>
+     */
+    private function movablePigs(?array $scope)
+    {
+        return Pig::whereNotIn('status', ['mati', 'dijual'])
+            ->when($scope !== null, fn ($q) => $q->whereHas('pen', fn ($p) => $p->whereIn('branch_id', $scope)))
+            ->orderBy('code')
+            ->get();
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $data = $this->validateForModal($request, [
             'pig_id' => 'required|exists:pigs,id',
             'to_pen_id' => 'required|exists:pens,id',
             'moved_at' => 'required|date|before_or_equal:today',

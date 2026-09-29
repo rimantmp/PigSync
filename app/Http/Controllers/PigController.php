@@ -8,10 +8,13 @@ use App\Models\PigBreed;
 use App\Models\PigPhase;
 use App\Services\PigService;
 use App\Support\BranchScope;
+use App\Support\RedirectsToFormModal;
 use Illuminate\Http\Request;
 
 class PigController extends Controller
 {
+    use RedirectsToFormModal;
+
     public function __construct(private readonly PigService $service) {}
 
     public function index(Request $request)
@@ -30,7 +33,14 @@ class PigController extends Controller
         $pens = Pen::when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))->get();
         $statuses = ['aktif', 'sakit', 'karantina', 'bunting', 'menyusui', 'dijual', 'mati', 'afkir'];
 
-        return view('pigs.index', compact('pigs', 'pens', 'statuses'));
+        return view('pigs.index', [
+            'pigs' => $pigs,
+            'pens' => $pens,
+            'statuses' => $statuses,
+            // Form registrasi & edit kini modal di halaman ini.
+            'breeds' => PigBreed::orderBy('name')->get(),
+            'phases' => PigPhase::orderBy('sort_order')->get(),
+        ]);
     }
 
     public function create()
@@ -45,7 +55,7 @@ class PigController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $data = $this->validateForModal($request, [
             'sex' => 'required|in:jantan,betina',
             'breed_id' => 'nullable|exists:pig_breeds,id',
             'birth_date' => 'required|date|before_or_equal:today',
@@ -62,6 +72,14 @@ class PigController extends Controller
         ]);
 
         $pig = $this->service->register($data);
+
+        // Dari form modal, user tetap di halaman daftar. Redirect ke detail
+        // hanya berlaku untuk form halaman penuh.
+        if ($request->filled('form_modal')) {
+            return redirect()
+                ->route('pigs.index')
+                ->with('status', 'Ternak terdaftar: '.$pig->code);
+        }
 
         return redirect()->route('pigs.show', $pig)->with('status', 'Ternak terdaftar: '.$pig->code);
     }
@@ -90,7 +108,7 @@ class PigController extends Controller
 
     public function update(Request $request, Pig $pig)
     {
-        $data = $request->validate([
+        $data = $this->validateForModal($request, [
             'tag_id' => 'nullable|string|max:50',
             'rfid' => 'nullable|string|max:50',
             'sex' => 'required|in:jantan,betina',
@@ -100,6 +118,12 @@ class PigController extends Controller
         ]);
 
         $this->service->update($pig, $data);
+
+        if ($request->filled('form_modal')) {
+            return redirect()
+                ->route('pigs.index')
+                ->with('status', 'Data ternak diperbarui.');
+        }
 
         return redirect()->route('pigs.show', $pig)->with('status', 'Data ternak diperbarui.');
     }

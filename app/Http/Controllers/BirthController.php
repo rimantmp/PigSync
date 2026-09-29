@@ -7,10 +7,14 @@ use App\Models\Pen;
 use App\Models\Pig;
 use App\Services\BirthService;
 use App\Support\BranchScope;
+use App\Support\RedirectsToFormModal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class BirthController extends Controller
 {
+    use RedirectsToFormModal;
+
     public function __construct(private readonly BirthService $service) {}
 
     public function index(Request $request)
@@ -23,26 +27,41 @@ class BirthController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('births.index', compact('births'));
+        return view('births.index', [
+            'births' => $births,
+            'sows' => $this->birthingSows($scope),
+            'pens' => Pen::when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))->orderBy('name')->get(),
+        ]);
     }
 
     public function create()
     {
         $scope = BranchScope::ids(auth()->user());
 
-        $sows = Pig::where('sex', 'betina')
+        return view('births.create', [
+            'sows' => $this->birthingSows($scope),
+            'pens' => Pen::when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * Betina yang bisa melahirkan.
+     *
+     * @param  array<int>|null  $scope
+     * @return Collection<int, Pig>
+     */
+    private function birthingSows(?array $scope)
+    {
+        return Pig::where('sex', 'betina')
             ->whereIn('status', ['bunting', 'menyusui', 'aktif'])
             ->when($scope !== null, fn ($q) => $q->whereHas('pen', fn ($p) => $p->whereIn('branch_id', $scope)))
-            ->orderBy('code')->get();
-
-        $pens = Pen::when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))->orderBy('name')->get();
-
-        return view('births.create', compact('sows', 'pens'));
+            ->orderBy('code')
+            ->get();
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $data = $this->validateForModal($request, [
             'sow_id' => 'nullable|exists:pigs,id',
             'farrowed_at' => 'required|date|before_or_equal:today',
             'total_born' => 'nullable|integer|min:1|max:20',

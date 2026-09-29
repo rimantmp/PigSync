@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\RedirectsToFormModal;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -10,6 +11,8 @@ use Illuminate\Routing\Controllers\Middleware;
 
 abstract class MasterController extends Controller implements HasMiddleware
 {
+    use RedirectsToFormModal;
+
     /**
      * FQCN model yang dikelola.
      */
@@ -72,6 +75,10 @@ abstract class MasterController extends Controller implements HasMiddleware
             'definitions' => $this->fields,
             'columns' => $this->fieldColumns(),
             'prefix' => $this->prefix,
+            // Form tambah & edit sekarang jadi modal di halaman ini, jadi opsi
+            // select harus tersedia di index — sebelumnya baru di halaman form.
+            'fieldOptions' => $this->fieldOptionsFor($this->fields),
+            'storeUrl' => route($this->prefix.'.store'),
         ]);
     }
 
@@ -87,7 +94,7 @@ abstract class MasterController extends Controller implements HasMiddleware
 
     public function store(Request $request)
     {
-        $data = $request->validate($this->rules);
+        $data = $this->validateForModal($request, $this->rules);
 
         $this->model()::create($data);
 
@@ -108,7 +115,7 @@ abstract class MasterController extends Controller implements HasMiddleware
 
     public function update(Request $request, $id)
     {
-        $data = $request->validate($this->rulesForUpdate($id));
+        $data = $this->validateForModal($request, $this->rulesForUpdate($id));
 
         $row = $this->model()::findOrFail($id);
         $row->update($data);
@@ -117,7 +124,32 @@ abstract class MasterController extends Controller implements HasMiddleware
     }
 
     /**
-     * Aturan validasi update: unik diabaikan untuk baris ini.
+     * Resolusi opsi select untuk setiap field, dipakai modal di halaman index.
+     *
+     * @param  array<string, array<string, mixed>>  $fields
+     * @return array<string, array<mixed, string>>
+     */
+    protected function fieldOptionsFor(array $fields): array
+    {
+        $options = [];
+
+        foreach ($fields as $name => $def) {
+            if (($def['type'] ?? 'text') !== 'select') {
+                continue;
+            }
+
+            $options[$name] = fieldOptions($def['options'] ?? [], $name);
+        }
+
+        return $options;
+    }
+
+    /**
+     * Aturan validasi update: aturan unique diabaikan untuk baris ini.
+     *
+     * Regex sebelumnya hanya cocok kalau `unique:` ada di posisi awal string,
+     * padahal aturan berantai seperti 'required|string|max:20|unique:units,code'
+     * menaruhnya di tengah — jadi update selalu gagal "kode sudah dipakai".
      *
      * @return array<string, mixed>
      */
@@ -126,13 +158,17 @@ abstract class MasterController extends Controller implements HasMiddleware
         $rules = $this->rules;
 
         foreach ($rules as $key => $rule) {
-            if (is_string($rule) && preg_match('/^unique:([^,]+),([^|]+)/', $rule, $m)) {
-                $rules[$key] = preg_replace(
-                    '/^unique:([^,]+),([^|]+)/',
-                    'unique:'.$m[1].','.$m[2].','.$id,
-                    $rule
-                );
+            if (! is_string($rule) || ! str_contains($rule, 'unique:')) {
+                continue;
             }
+
+            // Sisipkan id yang dikecualikan: unique:table,column,id,...
+            $rules[$key] = preg_replace(
+                '/unique:([^,]+),([^,|]+)/',
+                'unique:$1,$2,'.$id,
+                $rule,
+                1
+            );
         }
 
         return $rules;

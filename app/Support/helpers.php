@@ -18,6 +18,29 @@ if (! function_exists('statusBadge')) {
     }
 }
 
+if (! function_exists('alpineData')) {
+    /**
+     * Serialize nilai untuk dipakai di dalam attribute Alpine.
+     *
+     * `@js()` HANYA diproses di dalam `{{ }}` atau blok script — kalau
+     * ditulis mentah di attribute HTML (mis. `x-on:click="@js($x)"`),
+     * Directive-nya dibiarkan apa adanya dan string yang sampai ke browser
+     * adalah "@js($x)", bukan nilainya. Alpine lalu tidak pernah cocok dan
+     * tombolnya diam-diam mati.
+     *
+     * Dipakai sebagai: x-on:click="doThing({{ alpineData($payload) }})"
+     *
+     * Menghasilkan `JSON.parse('...')` — expression JS yang aman terhadap
+     * kutip, backslash, dan XSS, berbeda dari JSON mentah.
+     *
+     * @param  mixed  $value
+     */
+    function alpineData(mixed $value): string
+    {
+        return Illuminate\Support\Js::from($value)->toHtml();
+    }
+}
+
 if (! function_exists('rupiah')) {
     /**
      * Format angka gaya Indonesia: 2.500.000,50

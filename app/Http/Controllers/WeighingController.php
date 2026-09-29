@@ -6,10 +6,14 @@ use App\Models\Pig;
 use App\Models\PigWeight;
 use App\Services\WeighingService;
 use App\Support\BranchScope;
+use App\Support\RedirectsToFormModal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class WeighingController extends Controller
 {
+    use RedirectsToFormModal;
+
     public function __construct(private readonly WeighingService $service) {}
 
     public function index(Request $request)
@@ -23,23 +27,36 @@ class WeighingController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('weighings.index', compact('weights'));
+        return view('weighings.index', [
+            'weights' => $weights,
+            'pigs' => $this->availablePigs($scope),
+        ]);
     }
 
     public function create()
     {
-        $scope = BranchScope::ids(auth()->user());
-        $pigs = Pig::whereNotIn('status', ['mati'])
+        return view('weighings.create', [
+            'pigs' => $this->availablePigs(BranchScope::ids(auth()->user())),
+        ]);
+    }
+
+    /**
+     * Ternak yang masih bisa ditimbang.
+     *
+     * @param  array<int>|null  $scope
+     * @return Collection<int, Pig>
+     */
+    private function availablePigs(?array $scope)
+    {
+        return Pig::whereNotIn('status', ['mati'])
             ->when($scope !== null, fn ($q) => $q->whereHas('pen', fn ($p) => $p->whereIn('branch_id', $scope)))
             ->orderBy('code')
             ->get();
-
-        return view('weighings.create', compact('pigs'));
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $data = $this->validateForModal($request, [
             'pig_id' => 'required|exists:pigs,id',
             'weighed_at' => 'required|date|before_or_equal:today',
             'weight' => 'required|numeric|gt:0',

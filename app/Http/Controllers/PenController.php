@@ -48,12 +48,11 @@ class PenController extends MasterController
             $pen->current_population = $this->population->penPopulation($pen);
         }
 
-        return view('master.index', [
+        // Memakai data view dari MasterController::index() supaya opsi select
+        // dan URL store untuk modal ikut terbawa — versi lama hanya mengirim
+        // lima key dan membuat halaman error karena $storeUrl undefined.
+        return view('master.index', array_merge(parent::index()->getData(), [
             'rows' => $rows,
-            'label' => $this->label,
-            'definitions' => $this->fields,
-            'columns' => $this->fieldColumns(),
-            'prefix' => $this->prefix,
-        ]);
+        ]));
     }
 }

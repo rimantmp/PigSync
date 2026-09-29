@@ -7,10 +7,14 @@ use App\Models\Disease;
 use App\Models\Pig;
 use App\Services\DeathService;
 use App\Support\BranchScope;
+use App\Support\RedirectsToFormModal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class DeathController extends Controller
 {
+    use RedirectsToFormModal;
+
     public function __construct(private readonly DeathService $service) {}
 
     public function index(Request $request)
@@ -23,25 +27,40 @@ class DeathController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('deaths.index', compact('deaths'));
+        return view('deaths.index', [
+            'deaths' => $deaths,
+            'pigs' => $this->livingPigs($scope),
+            'diseases' => Disease::orderBy('name')->get(),
+        ]);
     }
 
     public function create()
     {
         $scope = BranchScope::ids(auth()->user());
 
-        $pigs = Pig::whereNotIn('status', ['mati', 'dijual'])
+        return view('deaths.create', [
+            'pigs' => $this->livingPigs($scope),
+            'diseases' => Disease::orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * Ternak yang masih hidup — belum mati dan belum terjual.
+     *
+     * @param  array<int>|null  $scope
+     * @return Collection<int, Pig>
+     */
+    private function livingPigs(?array $scope)
+    {
+        return Pig::whereNotIn('status', ['mati', 'dijual'])
             ->when($scope !== null, fn ($q) => $q->whereHas('pen', fn ($p) => $p->whereIn('branch_id', $scope)))
-            ->orderBy('code')->get();
-
-        $diseases = Disease::orderBy('name')->get();
-
-        return view('deaths.create', compact('pigs', 'diseases'));
+            ->orderBy('code')
+            ->get();
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $data = $this->validateForModal($request, [
             'pig_id' => 'required|exists:pigs,id',
             'died_at' => 'required|date|before_or_equal:today',
             'cause' => 'required|string|max:255',
