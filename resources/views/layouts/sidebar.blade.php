@@ -39,5 +39,21 @@
                 <a href="{{ route($route.'.index') }}" class="block px-3 py-1.5 rounded hover:bg-slate-800 text-slate-400 {{ request()->routeIs($route.'.*') ? 'text-white' : '' }}">{{ $label }}</a>
             @endforeach
         </div>
+
+        <a href="{{ route('sales.index') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 {{ request()->routeIs('sales.*') ? 'bg-slate-800 text-white' : 'text-slate-300' }}">
+            <span>💰</span><span class="ms-2">Penjualan</span>
+        </a>
+        <a href="{{ route('purchase.index') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 {{ request()->routeIs('purchase.*') ? 'bg-slate-800 text-white' : 'text-slate-300' }}">
+            <span>🛒</span><span class="ms-2">Pembelian</span>
+        </a>
+        <a href="{{ route('finance.index') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 {{ request()->routeIs('finance.*') ? 'bg-slate-800 text-white' : 'text-slate-300' }}">
+            <span>📒</span><span class="ms-2">Keuangan</span>
+        </a>
+        <a href="{{ route('reports.index') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 {{ request()->routeIs('reports.*') ? 'bg-slate-800 text-white' : 'text-slate-300' }}">
+            <span>📑</span><span class="ms-2">Laporan</span>
+        </a>
+        <a href="{{ route('notifications.index') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800 {{ request()->routeIs('notifications.*') ? 'bg-slate-800 text-white' : 'text-slate-300' }}">
+            <span>🔔</span><span class="ms-2">Notifikasi</span>
+        </a>
     </nav>
 </aside>

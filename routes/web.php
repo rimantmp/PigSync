@@ -9,16 +9,21 @@ use App\Http\Controllers\DeathController;
 use App\Http\Controllers\DiseaseController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FeedTypeController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\MovementController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PenController;
 use App\Http\Controllers\PigBreedController;
 use App\Http\Controllers\PigController;
 use App\Http\Controllers\PigPhaseController;
 use App\Http\Controllers\PopulationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReproductionController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\WeighingController;
@@ -61,6 +66,29 @@ Route::middleware(['auth', 'branch.scope'])->group(function () {
     // Pakan
     Route::get('feeds', [FeedController::class, 'index'])->name('feeds.index');
     Route::post('feeds', [FeedController::class, 'store'])->name('feeds.store');
+
+    // Penjualan
+    Route::resource('sales', SaleController::class)->only(['index', 'create', 'store']);
+
+    // Pembelian
+    Route::get('purchase', [PurchaseController::class, 'index'])->name('purchase.index');
+    Route::get('purchase/order', [PurchaseController::class, 'createOrder'])->name('purchase.order.create');
+    Route::post('purchase/order', [PurchaseController::class, 'storeOrder'])->name('purchase.order.store');
+
+    // Keuangan
+    Route::get('finance', [FinanceController::class, 'index'])->name('finance.index');
+
+    // Laporan
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/population', [ReportController::class, 'population'])->name('reports.population');
+    Route::get('reports/growth', [ReportController::class, 'growth'])->name('reports.growth');
+    Route::get('reports/deaths', [ReportController::class, 'deaths'])->name('reports.deaths');
+    Route::get('reports/movements', [ReportController::class, 'movements'])->name('reports.movements');
+    Route::get('reports/health', [ReportController::class, 'health'])->name('reports.health');
+
+    // Notifikasi
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
 });
 
 // Profil — cukup auth, tidak perlu scope cabang
