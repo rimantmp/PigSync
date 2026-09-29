@@ -1,44 +1,71 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $title ?? config('app.name', 'Sistem Kandang') }} — {{ config('app.name', 'Sistem Kandang') }}</title>
+    <title>{{ $title ?? config('app.name', 'Sistem Kandang') }} — {{ config('app.name', 'Sistem Kandang') }}</title>
 
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased bg-gray-100">
-        <div class="min-h-screen flex">
-            @include('layouts.sidebar')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-            <div class="flex-1 flex flex-col min-w-0">
-                @include('layouts.topbar')
+    {{-- Sidebar light memakai state collapse bersama; label disembunyikan
+         saat collapsed (§7.11), icon tetap dengan tooltip. --}}
+    <style>
+        [x-cloak] { display: none !important; }
 
-                <main class="flex-1 p-4 md:p-6">
-                    @if (session('status'))
-                        <div class="mb-4 max-w-full rounded-md bg-green-50 border border-green-300 text-green-800 px-4 py-3 text-sm">
-                            {{ session('status') }}
-                        </div>
-                    @endif
+        @media (min-width: 768px) {
+            .app-collapsed .sidebar-label { display: none; }
+            .app-collapsed aside { width: 72px; }
+            .app-collapsed .sidebar-item { justify-content: center; padding-inline: 0; }
+            .app-collapsed .brand-mark { margin-inline: auto; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-neutral-50 antialiased"
+      x-data="appShell()"
+      x-bind:class="sidebarCollapsed ? 'app-collapsed' : ''"
+      @keydown.escape.window="sidebarOpen = false">
 
-                    @if ($errors->any())
-                        <div class="mb-4 rounded-md bg-red-50 border border-red-300 text-red-800 px-4 py-3 text-sm">
-                            <ul class="list-disc ms-5 space-y-1">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary-500 focus:px-4 focus:py-2 focus:text-sm focus:text-white">
+        Lewati ke konten
+    </a>
 
-                    {{ $slot }}
-                </main>
+    {{-- Overlay mobile: klik menutup drawer (§7.13) --}}
+    <div x-show="sidebarOpen" x-cloak
+         @click="sidebarOpen = false"
+         class="fixed inset-0 z-30 bg-neutral-900/40 md:hidden"
+         aria-hidden="true"></div>
+
+    @include('layouts.sidebar')
+
+    <div class="flex min-h-screen flex-col md:pl-sidebar"
+         :class="sidebarCollapsed ? 'md:pl-sidebar-collapsed' : ''">
+
+        @include('layouts.topbar')
+
+        <main id="main-content" class="flex-1 px-4 py-6 md:px-8">
+            <div class="mx-auto w-full max-w-[1440px] space-y-5">
+                @if (session('status'))
+                    <x-alert variant="success">{{ session('status') }}</x-alert>
+                @endif
+
+                @if ($errors->any())
+                    <x-alert variant="error" title="Periksa kembali isian berikut">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </x-alert>
+                @endif
+
+                {{ $slot }}
             </div>
-        </div>
-    </body>
+        </main>
+    </div>
+</body>
 </html>

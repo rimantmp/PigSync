@@ -3,11 +3,14 @@
 
     <div class="space-y-6">
         <div class="flex flex-wrap justify-end gap-2">
-            <a href="{{ route('purchase-requests.index') }}" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 text-sm rounded-md hover:bg-slate-50">Purchase Request</a>
-            <a href="{{ route('purchase.order.create') }}" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-700">+ Buat PO</a>
-            <a href="{{ route('purchase.receipt.create') }}" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 text-sm rounded-md hover:bg-slate-50">Terima Barang</a>
-            <a href="{{ route('purchase.invoice.create') }}" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 text-sm rounded-md hover:bg-slate-50">Buat Invoice</a>
-            <a href="{{ route('payments.create') }}" class="inline-flex items-center px-4 py-2 border border-slate-300 text-slate-700 text-sm rounded-md hover:bg-slate-50">Catat Pembayaran</a>
+            <x-secondary-button href="{{ route('purchase-requests.index') }}">Purchase Request</x-secondary-button>
+            <x-secondary-button href="{{ route('purchase.receipt.create') }}">Terima Barang</x-secondary-button>
+            <x-secondary-button href="{{ route('purchase.invoice.create') }}">Buat Invoice</x-secondary-button>
+            <x-secondary-button href="{{ route('payments.create') }}">Catat Pembayaran</x-secondary-button>
+            <x-primary-button href="{{ route('purchase.order.create') }}">
+                <x-heroicon-o-plus class="h-4 w-4" />
+                Buat PO
+            </x-primary-button>
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-x-auto">

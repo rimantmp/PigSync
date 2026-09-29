@@ -1,3 +1,94 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    /* §2.3 — background aplikasi netral sangat terang, surface putih. */
+    body {
+        @apply bg-neutral-50 text-neutral-800;
+    }
+
+    /* §14.2 — focus indicator harus selalu terlihat, tidak dihapus. */
+    :focus-visible {
+        outline: 2px solid theme('colors.primary.500');
+        outline-offset: 2px;
+    }
+
+    /* Elemen yang sudah punya ring sendiri tidak perlu outline ganda. */
+    :focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    /* §17.17 — hormati preferensi pengguna terhadap gerak. */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+@layer components {
+    /* §9.13 — card: border sebagai separator utama, bukan shadow. */
+    .card {
+        @apply bg-white border border-neutral-200 rounded-lg;
+    }
+
+    .card-padded {
+        @apply bg-white border border-neutral-200 rounded-lg p-5;
+    }
+
+    /* §9.14 — table. */
+    .table-wrap {
+        @apply bg-white border border-neutral-200 rounded-lg overflow-x-auto;
+    }
+
+    .table-base {
+        @apply min-w-full text-sm;
+    }
+
+    .table-head {
+        @apply bg-neutral-50 text-neutral-600 text-left;
+    }
+
+    .table-head-cell {
+        @apply px-4 py-3 font-medium text-[13px] whitespace-nowrap;
+    }
+
+    .table-body {
+        @apply divide-y divide-neutral-100;
+    }
+
+    .table-row {
+        @apply hover:bg-neutral-50 transition-colors;
+    }
+
+    .table-cell {
+        @apply px-4 py-3 text-neutral-700;
+    }
+
+    .table-cell-num {
+        @apply px-4 py-3 text-right tabular-nums;
+    }
+
+    /* §9.18 — status tidak boleh hanya mengandalkan warna. */
+    .badge {
+        @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-pill text-xs font-medium;
+    }
+
+    /* §9.24 — empty state menjelaskan apa & mengapa kosong. */
+    .empty-state {
+        @apply flex flex-col items-center justify-center gap-2 px-6 py-12 text-center;
+    }
+
+    /* §9.3 — input. */
+    .field-control {
+        @apply block w-full rounded-lg border-neutral-300 text-sm text-neutral-900
+               placeholder:text-neutral-400
+               focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20;
+    }
+}

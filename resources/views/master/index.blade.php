@@ -10,9 +10,10 @@
                     <x-primary-button>Cari</x-primary-button>
                 </form>
             </div>
-            <a href="{{ route($prefix.'.create') }}" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-700">
-                + Tambah {{ $label }}
-            </a>
+            <x-primary-button href="{{ route($prefix.'.create') }}">
+                <x-heroicon-o-plus class="h-4 w-4" />
+                Tambah {{ $label }}
+            </x-primary-button>
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-hidden">

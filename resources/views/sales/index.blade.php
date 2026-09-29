@@ -3,7 +3,7 @@
 
     <div class="space-y-4">
         <div class="flex justify-end">
-            <a href="{{ route('sales.create') }}" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-700">+ Transaksi Penjualan</a>
+            <x-primary-button href="{{ route('sales.create') }}">Transaksi Penjualan</x-primary-button>
         </div>
         <div class="bg-white rounded-lg shadow overflow-x-auto">
             <table class="min-w-full text-sm">

@@ -19,7 +19,7 @@
                 </select>
                 <x-primary-button>Filter</x-primary-button>
             </form>
-            <a href="{{ route('pigs.create') }}" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-700">+ Registrasi Ternak</a>
+            <x-primary-button href="{{ route('pigs.create') }}">Registrasi Ternak</x-primary-button>
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-x-auto">

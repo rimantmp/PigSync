@@ -3,7 +3,7 @@
 
     <div class="space-y-4">
         <div class="flex justify-end gap-2">
-            <a href="{{ route('reproduction.mating') }}" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-700">+ Perkawinan</a>
+            <x-primary-button href="{{ route('reproduction.mating') }}">Perkawinan</x-primary-button>
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-x-auto">

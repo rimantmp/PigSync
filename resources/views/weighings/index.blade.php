@@ -7,7 +7,7 @@
                 <x-text-input name="search" value="{{ request('search') }}" placeholder="Cari kode ternak..." class="w-52" />
                 <x-primary-button>Filter</x-primary-button>
             </form>
-            <a href="{{ route('weighings.create') }}" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-700">+ Timbang</a>
+            <x-primary-button href="{{ route('weighings.create') }}">Timbang</x-primary-button>
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-x-auto">

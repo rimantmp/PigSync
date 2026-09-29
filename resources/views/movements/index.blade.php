@@ -3,7 +3,7 @@
 
     <div class="space-y-4">
         <div class="flex justify-end">
-            <a href="{{ route('movements.create') }}" class="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-700">+ Pindahkan</a>
+            <x-primary-button href="{{ route('movements.create') }}">Pindahkan</x-primary-button>
         </div>
         <div class="bg-white rounded-lg shadow overflow-x-auto">
             <table class="min-w-full text-sm">

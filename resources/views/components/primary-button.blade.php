@@ -1,3 +1,19 @@
-<button {{ $attributes->merge(['type' => 'submit', 'class' => 'inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150']) }}>
-    {{ $slot }}
-</button>
+@props([
+    'href' => null,
+    'type' => 'submit',
+])
+
+@php
+    $base = 'inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[40px] rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none';
+    $variant = 'bg-primary-500 border-transparent text-white hover:bg-primary-600 active:bg-primary-700';
+@endphp
+
+@if ($href)
+    <a href="{{ $href }}" {{ $attributes->merge(['class' => "$base $variant"]) }}>
+        {{ $slot }}
+    </a>
+@else
+    <button type="{{ $type }}" {{ $attributes->merge(['class' => "$base $variant"]) }}>
+        {{ $slot }}
+    </button>
+@endif

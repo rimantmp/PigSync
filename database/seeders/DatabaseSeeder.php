@@ -24,6 +24,12 @@ class DatabaseSeeder extends Seeder
         $this->seedSettings();
         $this->seedUsers();
         $this->seedMasterData();
+
+        // Data transaksi bulky untuk preview UI. Nonaktif secara default agar
+        // `migrate --seed` tetap cepat; panggil eksplisit saat perlu.
+        if (env('SEED_DEMO_DATA')) {
+            $this->call(DemoDataSeeder::class);
+        }
     }
 
     private function seedSettings(): void
