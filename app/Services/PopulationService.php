@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Pen;
 use App\Models\Pig;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class PopulationService
@@ -53,6 +54,41 @@ class PopulationService
             ->where('pen_id', $pen->id)
             ->whereNotIn('status', ['mati', 'dijual', 'afkir'])
             ->count();
+    }
+
+    /**
+     * Populasi banyak kandang dalam satu query.
+     *
+     * Dipakai laporan/export yang mengiterasi seluruh kandang — penPopulation()
+     * per kandang berarti satu query per baris laporan.
+     *
+     * @param  Collection<int, Pen>  $pens
+     * @return array<int, int> key = pen_id
+     */
+    public function bulkPenPopulation($pens, ?Carbon $at = null): array
+    {
+        $penIds = $pens->pluck('id')->all();
+
+        if ($penIds === []) {
+            return [];
+        }
+
+        $at ??= now();
+
+        $counts = Pig::withTrashed()
+            ->whereIn('pen_id', $penIds)
+            ->whereNotIn('status', ['mati', 'dijual', 'afkir'])
+            ->selectRaw('pen_id, count(*) as jumlah')
+            ->groupBy('pen_id')
+            ->pluck('jumlah', 'pen_id');
+
+        $result = [];
+
+        foreach ($penIds as $penId) {
+            $result[$penId] = (int) ($counts[$penId] ?? 0);
+        }
+
+        return $result;
     }
 
     /**

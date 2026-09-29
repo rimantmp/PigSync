@@ -3,14 +3,18 @@
 namespace Tests\Feature;
 
 use App\Models\Branch;
+use App\Models\FeedType;
 use App\Models\Pen;
 use App\Models\Pig;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Services\BirthService;
 use App\Services\DeathService;
 use App\Services\MovementService;
 use App\Services\PigService;
 use App\Services\PopulationService;
+use App\Services\PurchaseService;
+use App\Support\BranchScope;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -40,6 +44,8 @@ class BusinessRulesTest extends TestCase
 
     private PopulationService $population;
 
+    private PurchaseService $purchases;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -60,6 +66,7 @@ class BusinessRulesTest extends TestCase
         $this->deaths = app(DeathService::class);
         $this->births = app(BirthService::class);
         $this->population = app(PopulationService::class);
+        $this->purchases = app(PurchaseService::class);
 
         $this->actingAs($this->superAdmin);
     }
@@ -196,5 +203,38 @@ class BusinessRulesTest extends TestCase
         // Query scope: babi cabang B tidak muncul untuk scope cabang A
         $html = $this->get('/pigs')->getContent();
         $this->assertStringNotContainsString($pigB->code, $html);
+    }
+
+    public function test_scope_kosong_ditolak_jadi_bukan_akses_semua_cabang(): void
+    {
+        // Regression: blank([]) dulu membuat branch_scope kosong teraca "semua cabang".
+        $user = User::factory()->create(['branch_scope' => []]);
+        Role::create(['name' => 'Staf Gudang', 'guard_name' => 'web']);
+        $user->assignRole('Staf Gudang');
+
+        $this->assertSame([], BranchScope::ids($user));
+        $this->assertFalse(BranchScope::can($user, $this->branchA->id));
+
+        $this->actingAs($user);
+        $this->get('/pigs')->assertForbidden();
+    }
+
+    public function test_penerimaan_kumulatif_tidak_melebihi_jumlah_po(): void
+    {
+        $feed = FeedType::create(['code' => 'F-01', 'name' => 'Pakan Grower']);
+        $supplier = Supplier::create(['code' => 'S-01', 'name' => 'CV Pakan']);
+
+        $po = $this->purchases->createOrder($this->branchA->id, $supplier->id, null, [
+            ['item_type' => 'feed', 'item_id' => $feed->id, 'qty' => 100, 'price' => 1000],
+        ]);
+
+        $poItemId = $po->items->first()->id;
+
+        // Terima 60 dari 100, lalu 60 lagi harus ditolak (total 120 > 100).
+        $this->purchases->receive($po, ['received_qty' => [$poItemId => 60]]);
+
+        $this->expectException(\DomainException::class);
+
+        $this->purchases->receive($po, ['received_qty' => [$poItemId => 60]]);
     }
 }

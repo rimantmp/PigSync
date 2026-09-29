@@ -18,6 +18,29 @@ if (! function_exists('statusBadge')) {
     }
 }
 
+if (! function_exists('rupiah')) {
+    /**
+     * Format angka gaya Indonesia: 2.500.000,50
+     *
+     * number_format() default memakai koma, jadi separator harus
+     * disebutkan eksplisit agar konsisten dengan view lain.
+     */
+    function rupiah(float|int|string|null $value, int $decimals = 0): string
+    {
+        return number_format((float) $value, $decimals, ',', '.');
+    }
+}
+
+if (! function_exists('qty')) {
+    /**
+     * Format qty tanpa nol desimal yang tidak perlu: 40,00 -> "40", 40,50 -> "40,5".
+     */
+    function qty(float|int|string|null $value): string
+    {
+        return rtrim(rtrim(rupiah($value, 2), '0'), ',');
+    }
+}
+
 if (! function_exists('fieldOptions')) {
     /**
      * Resolve opsi form select. `options` bisa:

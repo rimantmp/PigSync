@@ -23,9 +23,11 @@ class BranchScope
             return null;
         }
 
+        // null = seluruh cabang. Array kosong = tidak ada cabang sama sekali,
+        // jadi jangan pakai blank() — blank([]) true dan akan membuka semua cabang.
         $scope = $user->branch_scope;
 
-        if (blank($scope)) {
+        if ($scope === null) {
             return null;
         }
 

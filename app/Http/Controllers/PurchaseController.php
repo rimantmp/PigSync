@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\Supplier;
+use App\Rules\ItemExists;
 use App\Services\PurchaseService;
 use App\Support\BranchScope;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class PurchaseController extends Controller
             ->when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))
             ->orderByDesc('request_date')->paginate(10);
 
-        $orders = PurchaseOrder::with(['supplier', 'branch', 'items'])
+        $orders = PurchaseOrder::with(['supplier', 'branch', 'items', 'invoices', 'receipts'])
             ->when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))
             ->orderByDesc('po_date')->paginate(10);
 
@@ -49,10 +50,16 @@ class PurchaseController extends Controller
             'po_date' => 'required|date|before_or_equal:today',
             'items' => 'required|array|min:1',
             'items.*.item_type' => 'required|in:feed,medicine,equipment',
-            'items.*.item_id' => 'required|integer',
+            'items.*.item_id' => ['required', 'integer', new ItemExists],
             'items.*.qty' => 'required|numeric|gt:0',
             'items.*.price' => 'required|numeric|gt:0',
         ]);
+
+        abort_unless(
+            BranchScope::can(auth()->user(), (int) $data['branch_id']),
+            404,
+            'Cabang tidak ditemukan.'
+        );
 
         $po = $this->service->createOrder(
             (int) $data['branch_id'],

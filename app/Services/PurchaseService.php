@@ -6,6 +6,7 @@ use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseReceipt;
+use App\Models\PurchaseReceiptItem;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
 use App\Models\Warehouse;
@@ -58,7 +59,22 @@ class PurchaseService
         throw_if($pr->status !== 'approved', \DomainException::class, 'PR belum disetujui.');
 
         return DB::transaction(function () use ($pr, $supplierId, $meta) {
-            $po = $this->createOrder($pr->branch_id, $supplierId, $pr->id, $pr->items->toArray(), $meta);
+            $items = $pr->items->map(fn ($item) => [
+                'item_type' => $item->item_type,
+                'item_id' => $item->item_id,
+                'qty' => $item->qty,
+                'unit_id' => $item->unit_id,
+                'price' => $item->est_price ?? $meta['price'] ?? 0,
+            ])->all();
+
+            // Harga PR adalah estimasi; wajib diisi harga riil saat dimasukkan PO.
+            throw_if(
+                collect($items)->contains(fn ($i) => (float) $i['price'] <= 0),
+                \DomainException::class,
+                'Harga item wajib diisi (>0) saat membuat PO.'
+            );
+
+            $po = $this->createOrder($pr->branch_id, $supplierId, $pr->id, $items, $meta);
 
             $pr->update(['status' => 'po_created']);
 
@@ -133,11 +149,22 @@ class PurchaseService
             foreach ($po->items as $item) {
                 $receiveQty = $meta['received_qty'][$item->id] ?? $item->qty;
 
+                // Bandingkan dengan sisa outstanding, bukan qty PO: PO bisa diterima
+                // beberapa kali, dan received_qty menumpuk antar penerimaan.
                 throw_if(
-                    (float) $receiveQty > (float) $item->qty,
+                    (float) $item->received_qty + (float) $receiveQty > (float) $item->qty,
                     \DomainException::class,
                     'Jumlah terima melebihi PO.'
                 );
+
+                PurchaseReceiptItem::create([
+                    'receipt_id' => $receipt->id,
+                    'po_item_id' => $item->id,
+                    'item_type' => $item->item_type,
+                    'item_id' => $item->item_id,
+                    'qty' => $receiveQty,
+                    'unit_id' => $item->unit_id,
+                ]);
 
                 $this->stocks->receive($warehouse, $item->item_type, $item->item_id, (float) $receiveQty, [
                     'unit_id' => $item->unit_id,

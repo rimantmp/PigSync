@@ -2,91 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Death;
-use App\Models\HealthRecord;
-use App\Models\Pen;
-use App\Models\PigMovement;
-use App\Models\PigWeight;
-use App\Services\PopulationService;
+use App\Services\ReportService;
 use App\Support\BranchScope;
+use App\Support\ReportFilters;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
-    public function __construct(private readonly PopulationService $population) {}
+    public function __construct(
+        private readonly ReportService $reports,
+    ) {}
 
     public function index(Request $request)
     {
-        $scope = BranchScope::ids(auth()->user());
-
         return view('reports.index', [
             'branches' => BranchScope::branches(auth()->user()),
-            'pens' => Pen::when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))->get(),
         ]);
     }
 
     public function population(Request $request)
     {
-        $scope = BranchScope::ids(auth()->user());
+        $filters = ReportFilters::fromRequest($request);
 
-        $pens = Pen::with('branch')
-            ->when($scope !== null, fn ($q) => $q->whereIn('branch_id', $scope))
-            ->when($request->branch_id, fn ($q, $v) => $q->where('branch_id', $v))
-            ->get();
-
-        foreach ($pens as $pen) {
-            $pen->population = $this->population->penPopulation($pen);
-        }
-
-        return view('reports.population', compact('pens'));
+        return view('reports.population', [
+            'pens' => $this->reports->population($filters),
+            'filters' => $filters,
+            'branches' => BranchScope::branches(auth()->user()),
+        ]);
     }
 
     public function growth(Request $request)
     {
-        $scope = BranchScope::ids(auth()->user());
+        $filters = ReportFilters::fromRequest($request);
 
-        $weights = PigWeight::with('pig.pen.branch')
-            ->when($scope !== null, fn ($q) => $q->whereHas('pig', fn ($p) => $p->whereHas('pen', fn ($x) => $x->whereIn('branch_id', $scope))))
-            ->orderBy('weighed_at')
-            ->get();
-
-        return view('reports.growth', compact('weights'));
+        return view('reports.growth', [
+            'weights' => $this->reports->growth($filters),
+            'filters' => $filters,
+            'branches' => BranchScope::branches(auth()->user()),
+        ]);
     }
 
     public function deaths(Request $request)
     {
-        $scope = BranchScope::ids(auth()->user());
+        $filters = ReportFilters::fromRequest($request);
 
-        $deaths = Death::with(['pig', 'pen.branch'])
-            ->when($scope !== null, fn ($q) => $q->whereHas('pen', fn ($p) => $p->whereIn('branch_id', $scope)))
-            ->when($request->from, fn ($q, $v) => $q->whereDate('died_at', '>=', $v))
-            ->when($request->to, fn ($q, $v) => $q->whereDate('died_at', '<=', $v))
-            ->orderByDesc('died_at')->get();
-
-        return view('reports.deaths', compact('deaths'));
+        return view('reports.deaths', [
+            'deaths' => $this->reports->deaths($filters),
+            'filters' => $filters,
+            'branches' => BranchScope::branches(auth()->user()),
+        ]);
     }
 
     public function movements(Request $request)
     {
-        $scope = BranchScope::ids(auth()->user());
+        $filters = ReportFilters::fromRequest($request);
 
-        $movements = PigMovement::with(['pig', 'fromPen', 'toPen'])
-            ->when($scope !== null, fn ($q) => $q->whereHas('pig', fn ($p) => $p->whereHas('pen', fn ($x) => $x->whereIn('branch_id', $scope))))
-            ->when($request->from, fn ($q, $v) => $q->whereDate('moved_at', '>=', $v))
-            ->when($request->to, fn ($q, $v) => $q->whereDate('moved_at', '<=', $v))
-            ->orderByDesc('moved_at')->get();
-
-        return view('reports.movements', compact('movements'));
+        return view('reports.movements', [
+            'movements' => $this->reports->movements($filters),
+            'filters' => $filters,
+            'branches' => BranchScope::branches(auth()->user()),
+        ]);
     }
 
     public function health(Request $request)
     {
-        $scope = BranchScope::ids(auth()->user());
+        $filters = ReportFilters::fromRequest($request);
 
-        $records = HealthRecord::with(['pig', 'disease', 'medicine'])
-            ->when($scope !== null, fn ($q) => $q->whereHas('pig', fn ($p) => $p->whereHas('pen', fn ($x) => $x->whereIn('branch_id', $scope))))
-            ->orderByDesc('checked_at')->get();
-
-        return view('reports.health', compact('records'));
+        return view('reports.health', [
+            'records' => $this->reports->health($filters),
+            'filters' => $filters,
+            'branches' => BranchScope::branches(auth()->user()),
+        ]);
     }
 }

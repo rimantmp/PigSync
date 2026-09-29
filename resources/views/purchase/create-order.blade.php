@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Buat Purchase Order</x-slot>
 
-    <div class="max-w-3xl bg-white rounded-lg shadow p-6" x-data="{ rows: [{item_type:'feed', item_id:'', qty:'', price:''}] }">
+    <div class="max-w-3xl bg-white rounded-lg shadow p-6">
         <form method="POST" action="{{ route('purchase.order.store') }}">
             @csrf
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -26,30 +26,7 @@
                 </div>
             </div>
 
-            <div class="mt-5">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-semibold text-gray-700">Item</h3>
-                    <button type="button" @click="rows.push({item_type:'feed', item_id:'', qty:'', price:''})" class="text-sm text-slate-600">+ Tambah baris</button>
-                </div>
-                <template x-for="(row, i) in rows" :key="i">
-                    <div class="grid grid-cols-12 gap-2 mt-2">
-                        <div class="col-span-3">
-                            <select :name="'items['+i+'][item_type]'" class="w-full rounded-md border-gray-300 text-sm">
-                                <option value="feed">Pakan</option><option value="medicine">Obat/Vaksin</option><option value="equipment">Perlengkapan</option>
-                            </select>
-                        </div>
-                        <div class="col-span-5">
-                            <input type="number" :name="'items['+i+'][item_id]'" placeholder="item id" class="w-full rounded-md border-gray-300 text-sm" inputmode="numeric" />
-                        </div>
-                        <div class="col-span-2">
-                            <input type="number" step="0.01" :name="'items['+i+'][qty]'" placeholder="qty" class="w-full rounded-md border-gray-300 text-sm" inputmode="numeric" />
-                        </div>
-                        <div class="col-span-2">
-                            <input type="number" step="0.01" :name="'items['+i+'][price]'" placeholder="harga" class="w-full rounded-md border-gray-300 text-sm" inputmode="numeric" />
-                        </div>
-                    </div>
-                </template>
-            </div>
+            <x-item-rows name="items" :with-price="true" />
 
             <div class="mt-6 flex gap-3">
                 <x-primary-button>Simpan</x-primary-button>

@@ -14,6 +14,7 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\MovementController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PenController;
 use App\Http\Controllers\PigBreedController;
 use App\Http\Controllers\PigController;
@@ -21,7 +22,12 @@ use App\Http\Controllers\PigPhaseController;
 use App\Http\Controllers\PopulationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\PurchaseDocumentController;
+use App\Http\Controllers\PurchaseInvoiceController;
+use App\Http\Controllers\PurchaseReceiptController;
+use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\ReproductionController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SupplierController;
@@ -74,6 +80,28 @@ Route::middleware(['auth', 'branch.scope'])->group(function () {
     Route::get('purchase', [PurchaseController::class, 'index'])->name('purchase.index');
     Route::get('purchase/order', [PurchaseController::class, 'createOrder'])->name('purchase.order.create');
     Route::post('purchase/order', [PurchaseController::class, 'storeOrder'])->name('purchase.order.store');
+
+    // Purchase Request + approval
+    Route::resource('purchase-requests', PurchaseRequestController::class)->only(['index', 'create', 'store']);
+    Route::post('purchase-requests/{purchase_request}/approve', [PurchaseRequestController::class, 'approve'])->name('purchase-requests.approve');
+    Route::post('purchase-requests/{purchase_request}/reject', [PurchaseRequestController::class, 'reject'])->name('purchase-requests.reject');
+
+    // Penerimaan, invoice, pembayaran
+    Route::get('purchase/receipt', [PurchaseReceiptController::class, 'create'])->name('purchase.receipt.create');
+    Route::post('purchase/receipt', [PurchaseReceiptController::class, 'store'])->name('purchase.receipt.store');
+    Route::get('purchase/invoice', [PurchaseInvoiceController::class, 'create'])->name('purchase.invoice.create');
+    Route::post('purchase/invoice', [PurchaseInvoiceController::class, 'store'])->name('purchase.invoice.store');
+    Route::get('payments/create', [PaymentController::class, 'create'])->name('payments.create');
+    Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+
+    // Export laporan (CSV + PDF), mengikuti filter halaman
+    Route::get('reports/{report}/export/csv', [ReportExportController::class, 'csv'])->name('reports.export.csv');
+    Route::get('reports/{report}/export/pdf', [ReportExportController::class, 'pdf'])->name('reports.export.pdf');
+
+    // Dokumen pembelian cetak (PDF)
+    Route::get('purchase/orders/{purchase_order}/pdf', [PurchaseDocumentController::class, 'order'])->name('purchase.order.pdf');
+    Route::get('purchase/invoices/{purchase_invoice}/pdf', [PurchaseDocumentController::class, 'invoice'])->name('purchase.invoice.pdf');
+    Route::get('purchase/receipts/{purchase_receipt}/pdf', [PurchaseDocumentController::class, 'receipt'])->name('purchase.receipt.pdf');
 
     // Keuangan
     Route::get('finance', [FinanceController::class, 'index'])->name('finance.index');

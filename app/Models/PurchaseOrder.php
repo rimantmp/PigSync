@@ -42,4 +42,14 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(PurchaseOrderItem::class, 'po_id');
     }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(PurchaseInvoice::class, 'po_id');
+    }
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(PurchaseReceipt::class, 'po_id');
+    }
 }

@@ -1,6 +1,8 @@
 <x-app-layout>
     <x-slot name="title">Laporan Populasi</x-slot>
 
+    @include('reports.filter')
+
     <div class="bg-white rounded-lg shadow overflow-x-auto">
         <table class="min-w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-left">
@@ -15,5 +17,6 @@
             </tbody>
         </table>
     </div>
-    <a href="{{ route('reports.index') }}" class="inline-block mt-3 text-sm text-slate-600">← Kembali</a>
+
+    @include('reports.actions', ['report' => 'population'])
 </x-app-layout>
